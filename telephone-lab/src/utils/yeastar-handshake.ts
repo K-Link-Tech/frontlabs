@@ -1,6 +1,17 @@
 interface BaseYeastarResponse {
   errcode: number;
-  errmsg: string;
+  errmsg: "SUCCESS" | "FAILURE";
+}
+
+interface GetTokenResponse extends BaseYeastarResponse {
+  access_token_expire_time: number;
+  access_token: string;
+  refresh_token_expire_time: number;
+  refresh_token: string;
+}
+
+interface GetSignatureResponse extends BaseYeastarResponse {
+  data: { sign: string };
 }
 
 interface ConstructorInput {
@@ -10,7 +21,9 @@ interface ConstructorInput {
   username: string;
 }
 
-export class YeastarSignature {
+export type HandshakeResult = GetSignatureResponse;
+
+export class GetYeastarSignature {
   private AccessID: string;
   private AccessKey: string;
   private apiUrl: string;
@@ -33,30 +46,23 @@ export class YeastarSignature {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     })
-      .then((resp) => [resp.json(), null] as [D, null])
+      .then(async (resp) => [await resp.json(), null] as [D, null])
       .catch((e) => [null, e] as [null, E]);
   }
 
-  private getToken() {
-    interface Data extends BaseYeastarResponse {
-      access_token_expire_time: number;
-      access_token: string;
-      refresh_token_expire_time: number;
-      refresh_token: string;
-    }
-
-    return this.apiClient<Data>("/openapi/v1.0/get_token", "POST", {
-      username: this.AccessID,
-      password: this.AccessKey,
-    });
+  private async getToken() {
+    return await this.apiClient<GetTokenResponse>(
+      "/openapi/v1.0/get_token",
+      "POST",
+      {
+        username: this.AccessID,
+        password: this.AccessKey,
+      },
+    );
   }
 
-  private getSignature(access_token: string, username: string) {
-    interface Data extends BaseYeastarResponse {
-      data: { sign: string };
-    }
-
-    return this.apiClient<Data>(
+  private async getSignature(access_token: string, username: string) {
+    return await this.apiClient<GetSignatureResponse>(
       `/openapi/v1.0/sign/create?access_token=${access_token}`,
       "POST",
       {

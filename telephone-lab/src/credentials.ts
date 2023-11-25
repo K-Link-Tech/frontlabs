@@ -8,7 +8,7 @@ export const credentials = {
 
 /** linkus SDK credentials */
 export const yeastar = {
-  BaseURL: "klinkserver.ras.yeastar.com",
+  BaseURL: "https://klinkserver.ras.yeastar.com",
   Username: "1000",
   AccessID: "WDOMjSaVnqIL6UaqIkTTVfUzc4yQOCoy",
   AccessKey: "giSNBQHOX0BMbkhbwPatn1PHWMJhysWI",
