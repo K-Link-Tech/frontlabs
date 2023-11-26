@@ -5,9 +5,12 @@
     "errmsg",
     "Iconoir",
     "Linkus",
+    "mizu",
     "openapi",
+    "peername",
     "webrtc",
     "Xmark",
-    "Yeastar"
+    "Yeastar",
+    "zustand"
   ]
 }
