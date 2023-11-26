@@ -1,16 +1,25 @@
 {
-  "cSpell.words": [
-    "clsx",
-    "errcode",
-    "errmsg",
-    "Iconoir",
-    "Linkus",
-    "mizu",
-    "openapi",
-    "peername",
-    "webrtc",
-    "Xmark",
-    "Yeastar",
-    "zustand"
-  ]
+	"[markdown]": {
+		"editor.defaultFormatter": "mervin.markdown-formatter",
+		"editor.quickSuggestions": {
+			"other": true,
+			"comments": true,
+			"strings": true
+		}
+	},
+	"cSpell.words": [
+		"clsx",
+		"errcode",
+		"errmsg",
+		"Iconoir",
+		"Linkus",
+		"mizu",
+		"openapi",
+		"peername",
+		"tailwindcss",
+		"webrtc",
+		"Xmark",
+		"Yeastar",
+		"zustand"
+	]
 }

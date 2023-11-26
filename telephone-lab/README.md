@@ -1,7 +1,9 @@
 ### context
 
-- session data <auth>
-- mizu <web_phone.js>
+* session data <auth>
+* mizu <web_phone.js>
+
+---
 
 ### Case Init
 
@@ -18,8 +20,8 @@
    d. out_bound_ringing listen
    e. out_bound_connect listen
    f. webSocket listen call_log queue number
-		a. set_state (queue_name, server_call_log_token, yeastar_call_id, queue_number)
-		b. attendant_transfer_form_data (channel_id)
+    - set_state (queue_name, server_call_log_token, yeastar_call_id, queue_number)
+    - set_attendant_transfer_form_data (channel_id)
 
 ---
 
@@ -72,6 +74,7 @@
 1. webSocket listen call_log queue number
 	a. clear set_state (queue_name, server_call_log_token, yeastar_call_id, queue_number)
 	b. clear attendant_transfer_form_data (channel_id)
+
 2. timer stop
 3. duration (timer), status (missed/answered/no_answered) => call_log store
 4. call_draft or end
