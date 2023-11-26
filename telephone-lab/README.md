@@ -1,4 +1,6 @@
-### context
+# Telephony Module
+
+### Context
 
 * session data <auth>
 * mizu <web_phone.js>
@@ -72,14 +74,14 @@
 ### Case Call End (Inbound / Outbound)
 
 1. webSocket listen call_log queue number
-	a. clear set_state (queue_name, server_call_log_token, yeastar_call_id, queue_number)
-	b. clear attendant_transfer_form_data (channel_id)
+	1. clear set_state (queue_name, server_call_log_token, yeastar_call_id, queue_number)
+	2. clear attendant_transfer_form_data (channel_id)
 
 2. timer stop
 3. duration (timer), status (missed/answered/no_answered) => call_log store
 4. call_draft or end
-	a. if (status == missed || status == no_answered) => clear all data
-	b. else => call draft
+	1. if (status == missed || status == no_answered) => clear all data
+	2. else => call draft
 
 ---
 
