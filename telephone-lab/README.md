@@ -9,25 +9,19 @@
 
 1. `web_phone.js` <script /> loading
 2. `web_phone.js` initializing
-
-   a. agent status webSocket listen => zustand store
-
+   1. agent status webSocket listen => zustand store
 3. `web_phone.js` loaded mizu init (session sip credentials)
-
-   a. backend api agent status => get yeastar agent status
-   b. on_register_state_change => agent status webSocket emit (agent information)
-
+   1. backend api agent status => get yeastar agent status
+   2. on_register_state_change => agent status webSocket emit (agent information)
 4. mizu init success mizu on_call_state_change
-
-   a. call_stack listen => save incoming and outgoing events in array
-   b. in_bound_ringing listen
-   c. in_bound_connect listen
-   d. out_bound_ringing listen
-   e. out_bound_connect listen
-   f. webSocket listen call_log queue number
-
-      a. set_state (queue_name, server_call_log_token, yeastar_call_id, queue_number)
-      b. set_attendant_transfer_form_data (channel_id)
+   1. call_stack listen => save incoming and outgoing events in array
+   2. in_bound_ringing listen
+   3. in_bound_connect listen
+   4. out_bound_ringing listen
+   5. out_bound_connect listen
+   6. webSocket listen call_log queue number
+      1. set_state (queue_name, server_call_log_token, yeastar_call_id, queue_number)
+      2. set_attendant_transfer_form_data (channel_id)
 
 ---
 
