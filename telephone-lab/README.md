@@ -1,4 +1,7 @@
-context - session data <auth> - mizu <web_phone.js>
+### context
+
+- session data <auth>
+- mizu <web_phone.js>
 
 ### Case Init
 
