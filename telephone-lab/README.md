@@ -5,6 +5,10 @@
 * session data <auth>
 * mizu <web_phone.js>
 
+### Linkus SDK
+
+[documentation](https://help.yeastar.com/en/p-series-linkus-appliance-edition/linkus-sdk-guide/linkus-sdk-for-web-overview.html)
+
 ---
 
 ### Case Init
