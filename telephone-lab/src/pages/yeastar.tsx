@@ -1,8 +1,11 @@
 import { Card } from "@/components/Base/Card";
 import { Title } from "@/components/Base/Title";
-import { CallInProgress, DialPad, IncomingCall } from "@/components/Telephone";
+import Incoming from "@/components/Incoming";
+import Session from "@/components/Session";
+import { DialPad } from "@/components/Telephone";
 import { yeastar } from "@/credentials";
 import { echo } from "@/utils";
+import { initLinkus } from "@/utils/linkus-sdk";
 import { GetYeastarSignature } from "@/utils/yeastar-handshake";
 import { useEffect, useRef, useState } from "react";
 
@@ -10,6 +13,11 @@ export default function PageYeastar() {
 	const signatureCount = useRef(0);
 	const [signature, setSignature] = useState("");
 	const [signatureError, setSignatureError] = useState("");
+	const [phone, setPhone] = useState<any>(null);
+	const [callId, setCallId] = useState<any>("");
+	const [sessions, setSessions] = useState<any>([]);
+	const [incomings, setIncoming] = useState<any>([]);
+	const [cause, setCause] = useState<any>("");
 
 	useEffect(() => {
 		if (signatureCount.current > 0) return;
@@ -39,19 +47,63 @@ export default function PageYeastar() {
 			});
 	}, []);
 
-	// useEffect(() => {
-	//   if (signature.length <= 0) return;
+	useEffect(() => {
+		if (signature.length <= 0) return;
 
-	//   initLinkus(
-	//     { secret: signature, username: yeastar.Username },
-	//     {
-	//       phone_beforeStart(phone) {
+		initLinkus(
+			{ secret: signature, username: yeastar.Username },
+			{
+				phone_beforeStart(phone) {},
+				phone_afterStart(phone, destroy) {
+					console.log("phone", phone);
+					setPhone(phone);
+				},
+			},
+		);
+	}, [signature]);
 
-	//       },
-	//     },
-	//   );
+	useEffect(() => {
+		if (!phone) return;
+		// listen startSession event and show ui.
+		const startSession = ({
+			callId,
+			session,
+		}: {
+			callId: any;
+			session: any;
+		}) => {
+			setCallId(callId);
+			setSessions(Array.from(phone.sessions.values()));
+		};
 
-	// }, [signature]);
+		const deleteSession = ({ callId, cause }: { callId: any; cause: any }) => {
+			// here can handle session deleted event.
+			setCause(cause);
+			setSessions(Array.from(phone.sessions.values()));
+		};
+		const incoming = ({ callId, session }: { callId: any; session: any }) => {
+			// This example disabled call waiting, only handle one call.
+			// So here just handle one incoming call.
+			setIncoming([session]);
+		};
+		phone.on("startSession", startSession);
+		phone.on("deleteSession", deleteSession);
+		phone.on("incoming", incoming);
+		return () => {
+			phone.removeListener("startSession", startSession);
+			phone.removeListener("deleteSession", deleteSession);
+			phone.removeListener("incoming", incoming);
+		};
+	}, [phone]);
+
+	const callHandler = (number: string) => {
+		if (!phone || !number) return;
+		phone.call(number);
+		setCause("");
+	};
+	const deleteIncoming = () => {
+		setIncoming([]);
+	};
 
 	return (
 		<main className="mx-auto max-w-5xl p-8">
@@ -69,16 +121,43 @@ export default function PageYeastar() {
 			</Card>
 
 			<article className="flex flex-col gap-10">
-				<section className="grid grid-cols-2 gap-6">
-					<DialPad />
-					<CallInProgress callInfo={<pre>{echo({ phNo: "mg mg" })}</pre>} />
+				<section>
+					{incomings.map((session) => (
+						<Incoming
+							key={session.status.callId}
+							session={session}
+							handler={() => {
+								deleteIncoming();
+							}}
+						/>
+					))}
+					{sessions.map((session) => {
+						return <Session key={session.status.callId} session={session} />;
+					})}
+					{cause && <div> phone call end, Cause: {cause} </div>}
 				</section>
 
-				<section className="flex flex-col gap-4">
+				<section className="grid grid-cols-2 gap-6">
+					<DialPad onCall={(number) => callHandler(number)} />
+					{/* <CallInProgress
+						onHangup={() => phone.hangup(callId)}
+						onHold={() => phone.hold(callId)}
+						callInfo={
+							<pre>
+								{echo({
+									callId: callId,
+									session: sessions?.status?.callStatus,
+								})}
+							</pre>
+						}
+					/> */}
+				</section>
+
+				{/* <section className="flex flex-col gap-4">
 					<Title size="md">Calls Incoming</Title>
 
 					<IncomingCall callInfo={<pre>{echo({ phNo: "testing" })}</pre>} />
-				</section>
+				</section> */}
 			</article>
 		</main>
 	);
