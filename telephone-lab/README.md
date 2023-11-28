@@ -76,7 +76,6 @@
 1. webSocket listen call_log queue number
 	1. clear set_state (queue_name, server_call_log_token, yeastar_call_id, queue_number)
 	2. clear attendant_transfer_form_data (channel_id)
-
 2. timer stop
 3. duration (timer), status (missed/answered/no_answered) => call_log store
 4. call_draft or end
@@ -87,6 +86,20 @@
 
 ### Case Blind Transfer
 
+1. get agents presence status web socket
+2. blind transfer
+   1. if (agent not active) => show toast error
+   2. else => transfer , call_end
+
 ---
 
 ### Case Attendant Transfer
+
+1. get agents presence status web socket
+
+---
+
+### Case DTMF
+
+1. dtmf input => debounced 2s
+2. dtmf trigger
