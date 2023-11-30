@@ -53,14 +53,14 @@ export default function PageYeastar() {
 		initLinkus(
 			{ secret: signature, username: yeastar.Username },
 			{
-				phone_beforeStart(phone) {},
-				phone_afterStart(phone, destroy) {
-					console.log("phone", phone);
+				phone_beforeStart(phone) {
 					setPhone(phone);
 				},
+				phone_afterStart(phone, destroy) {},
 			},
 		);
 	}, [signature]);
+	console.log(sessions);
 
 	useEffect(() => {
 		if (!phone) return;
@@ -105,6 +105,8 @@ export default function PageYeastar() {
 		setIncoming([]);
 	};
 
+	// console.log(sessions.filter(s => ))
+
 	return (
 		<main className="mx-auto max-w-5xl p-8">
 			<Title className="mb-16">Linkus SDK</Title>
@@ -132,7 +134,17 @@ export default function PageYeastar() {
 						/>
 					))}
 					{sessions.map((session) => {
-						return <Session key={session.status.callId} session={session} />;
+						return (
+							<>
+								{!session.status.isTransfer && (
+									<Session
+										key={session.status.callId}
+										session={session}
+										phone={phone}
+									/>
+								)}
+							</>
+						);
 					})}
 					{cause && <div> phone call end, Cause: {cause} </div>}
 				</section>

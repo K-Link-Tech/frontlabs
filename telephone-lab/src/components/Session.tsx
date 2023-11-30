@@ -6,27 +6,43 @@ import { DialPad } from "./Telephone";
 
 type SessionType = {
 	session: any;
+	phone: any;
 };
 
 export default function Session(props: SessionType) {
-	const { session } = props;
+	const { session, phone } = props;
 	const [callInfo, setCallInfo] = useState(session.status);
 	const [callStatus, setCallStatus] = useState(session.status.callStatus);
 	const [timer, setTimer] = useState(session.timer);
 	const [remoteStream, setRemoteStream] = useState(null);
+	const [number, setNumber] = useState<string | null>(null);
 	const [isTransfer, setIsTransfer] = useState(false);
+	const [transferType, setTransferType] = useState<string | null>(null);
 	const remoteAudioRef = useRef(null);
 	const hangupHandler = () => {
 		session.terminate("hangup");
 	};
 	const onHoldHandler = () => {
-		session.hold(callInfo.callId);
+		session.hold();
 	};
 	const unHoldHandler = () => {
-		session.unhold(callInfo.callId);
+		session.unhold();
 	};
-	const transferHandler = (number: string) => {
-		session.attendedTransfer(callInfo.callId, number);
+	const attendedHandler = (number: string) => {
+		setNumber(number);
+		phone.call(number, undefined, callInfo.callId);
+	};
+	const transferHandler = () => {
+		const currentSession = phone.getCurrentSession();
+		currentSession.attendedTransfer(number);
+	};
+	const blindHandler = (number: string) => {
+		session.blindTransfer(number);
+	};
+
+	const onTransfer = (type: string) => {
+		setIsTransfer(!isTransfer);
+		setTransferType(type);
 	};
 
 	// confirmed
@@ -113,8 +129,8 @@ export default function Session(props: SessionType) {
 	// set audio stream
 	useEffect(() => {
 		if (!remoteStream) return;
-		// const audioTracks = remoteStream?.getAudioTracks();
-		// if (audioTracks) remoteAudioRef?.current?.srcObject = remoteStream;
+		// const audioTracks = remoteStream.getAudioTracks();
+		// if (audioTracks) remoteAudioRef.current?.srcObject = remoteStream;
 	}, [remoteStream]);
 
 	return (
@@ -145,7 +161,13 @@ export default function Session(props: SessionType) {
 			<audio ref={remoteAudioRef} autoPlay />
 			{isTransfer && callStatus === "talking" && (
 				<div className="my-4">
-					<DialPad onCall={(number) => transferHandler(number)} />
+					<DialPad
+						onCall={(number) =>
+							transferType === "attended"
+								? attendedHandler(number)
+								: blindHandler(number)
+						}
+					/>
 				</div>
 			)}
 			<div className="mt-4 flex space-x-4">
@@ -167,8 +189,21 @@ export default function Session(props: SessionType) {
 							</button>
 						)}
 						<button
+							className="flex items-center rounded-md bg-lime-500 p-2 text-white hover:bg-lime-600"
+							onClick={() => onTransfer("attended")}
+						>
+							Attended <DataTransferBoth />
+						</button>
+
+						<button
 							className="flex items-center rounded-md bg-orange-300 p-2 text-white hover:bg-orange-600"
-							onClick={() => setIsTransfer(!isTransfer)}
+							onClick={() => onTransfer("blind")}
+						>
+							Blind <DataTransferBoth />
+						</button>
+						<button
+							className="flex items-center rounded-md bg-lime-500 p-2 text-white hover:bg-lime-600"
+							onClick={transferHandler}
 						>
 							Transfer <DataTransferBoth />
 						</button>
