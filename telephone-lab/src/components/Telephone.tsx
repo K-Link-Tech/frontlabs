@@ -2,6 +2,7 @@ import { cn } from "@/utils";
 import {
 	DataTransferBoth,
 	Dialpad,
+	Microphone,
 	MicrophoneMute,
 	Phone,
 	PhoneOutcome,
@@ -9,7 +10,8 @@ import {
 	PhoneXmark,
 	Shuffle,
 } from "iconoir-react";
-import { FormEvent, ReactNode, useCallback, useState } from "react";
+import { FormEvent, ReactNode, useCallback, useEffect, useState } from "react";
+import type { CallStatus, Session } from "ys-webrtc-sdk-core";
 import { Button } from "./Base/Button";
 import { Card } from "./Base/Card";
 import { Input } from "./Base/Input";
@@ -90,6 +92,7 @@ interface CallInProgressProps {
 	hidden?: boolean;
 	callInfo?: ReactNode;
 	disabledControls?: boolean;
+	session: Session;
 	onMute?: () => void;
 	onHold?: () => void;
 	onHangup?: () => void;
@@ -98,11 +101,17 @@ interface CallInProgressProps {
 	onDTMF?: () => void;
 }
 type InputStatus = "" | "BlindTransfer" | "AttendantTransfer" | "DTMF";
+type EventType = {
+	callId?: string;
+	session: Session;
+	cause?: string;
+	timer?: any;
+};
 export function CallInProgress({
 	title,
 	hidden = false,
-	callInfo,
 	disabledControls = false,
+	session,
 	onMute,
 	onHold,
 	onHangup,
@@ -112,6 +121,9 @@ export function CallInProgress({
 }: CallInProgressProps) {
 	const [inputStatus, setInputStatus] = useState<InputStatus>("");
 	const [number, setNumber] = useState("");
+	const [callInfo, setCallInfo] = useState(session.status);
+	const [callStatus, setCallStatus] = useState(session.status.callStatus);
+	const [timer, setTimer] = useState(session.timer);
 
 	const toggleInputStatus = useCallback(
 		(status: InputStatus) => {
@@ -129,7 +141,7 @@ export function CallInProgress({
 					onAttendantTransfer && onAttendantTransfer();
 					return;
 				case "BlindTransfer":
-					onBlindTransfer && onBlindTransfer();
+					session.blindTransfer(number);
 					return;
 				case "DTMF":
 					onDTMF && onDTMF();
@@ -138,29 +150,147 @@ export function CallInProgress({
 					return;
 			}
 		},
-		[inputStatus, onAttendantTransfer, onBlindTransfer, onDTMF],
+		[inputStatus, number, onAttendantTransfer, onDTMF, session],
 	);
+
+	// confirmed
+	useEffect(() => {
+		const handler = ({ callId, session }: EventType) => {
+			console.log(`callId: ${callId} has been confirmed.`);
+			setCallStatus(session.status.callStatus);
+		};
+		session.on("confirmed", handler);
+		return () => {
+			session.removeListener("confirmed", handler);
+		};
+	}, [session]);
+
+	// accepted
+	useEffect(() => {
+		const handler = ({ callId, session }: EventType) => {
+			console.log(`callId: ${callId} has been accepted.`);
+			setCallStatus(session.status.callStatus);
+		};
+		session.on("accepted", handler);
+		return () => {
+			session.removeListener("accepted", handler);
+		};
+	}, [session]);
+
+	// failed
+	useEffect(() => {
+		const handler = ({ callId, cause }: EventType) => {
+			console.log(`callId: ${callId} has been failed. cause:${cause}`);
+		};
+		session.on("failed", handler);
+		return () => {
+			session.removeListener("failed", handler);
+		};
+	}, [session]);
+
+	// ended
+	useEffect(() => {
+		const handler = ({ callId, cause }: EventType) => {
+			console.log(`callId: ${callId} has been ended.`);
+		};
+		session.on("ended", handler);
+		return () => {
+			session.removeListener("ended", handler);
+		};
+	}, [session]);
+
+	// timer update.
+	useEffect(() => {
+		const handler = ({ callId, timer: newTimer }: EventType) => {
+			setTimer({ ...newTimer });
+		};
+		session.on("updateTimer", handler);
+		return () => {
+			session.removeListener("updateTimer", handler);
+		};
+	}, [session]);
+
+	// status changed.
+	useEffect(() => {
+		const handler = (newStatus: CallStatus, oldStatus: CallStatus) => {
+			console.log(`callId: ${newStatus.callId} status change.`);
+			setCallInfo(newStatus);
+		};
+		session.on("statusChange", handler);
+		return () => {
+			session.removeListener("statusChange", handler);
+		};
+	}, [session]);
+
+	// show calling ui
+	if (callStatus === "calling") {
+		return (
+			<Card className={cn("flex flex-col gap-4", hidden ? "hidden" : "")}>
+				<Title size="md">{title}</Title>
+				<p>Calling .... </p>
+				<Button
+					title="Hangup"
+					onClick={() => session.hangup()}
+					className="bg-red-700 hover:bg-red-800"
+				>
+					Cancel <PhoneXmark />
+				</Button>
+			</Card>
+		);
+	}
 
 	return (
 		<Card className={cn("flex flex-col gap-4", hidden ? "hidden" : "")}>
 			<Title size="md">{title}</Title>
+			<article className="font-mono text-sm">
+				<p>Name: {callInfo.name}</p>
+				<p>Number: {callInfo.number}</p>
+				<p>Call status: {callStatus}</p>
+				<p>
+					Duration:{" "}
+					{callStatus === "ringing" && " ringing:" + timer.ringDuration}
+					{callStatus === "connecting" && " calling:" + timer.callingDuration}
+					{callStatus === "talking" && " talking:" + timer.callDuration}
+					{callInfo.isHold && " hold:" + timer.holdDuration}
+				</p>
+			</article>
 
 			<fieldset disabled={disabledControls} className="flex flex-wrap gap-4">
-				<Button
-					title="Mute Mic"
-					onClick={() => onMute && onMute()}
-					className="bg-indigo-700 hover:bg-indigo-800"
-				>
-					Mute <MicrophoneMute />
-				</Button>
+				{callInfo.isMute ? (
+					<Button
+						title="Unmute Mic"
+						onClick={() => session.unmute()}
+						className="bg-indigo-700 hover:bg-indigo-800"
+					>
+						Unmute <Microphone />
+					</Button>
+				) : (
+					<Button
+						title="Mute Mic"
+						onClick={() => session.mute()}
+						className="bg-indigo-300 hover:bg-indigo-400"
+					>
+						Mute <MicrophoneMute />
+					</Button>
+				)}
 
-				<Button
-					title="Hold Call"
-					onClick={() => onHold && onHold()}
-					className="bg-slate-700 hover:bg-slate-800"
-				>
-					Hold <PhonePaused />
-				</Button>
+				{callInfo.isHold ? (
+					<Button
+						title="Unhold Call"
+						onClick={() => session.unhold()}
+						className="bg-slate-700 hover:bg-slate-800"
+					>
+						Un-hold <Phone />
+					</Button>
+				) : (
+					<Button
+						title="Hold Call"
+						onClick={() => session.hold()}
+						className="bg-slate-300 hover:bg-slate-400"
+					>
+						Hold <PhonePaused />
+					</Button>
+				)}
 
 				<Button
 					title="Blind Transfer"
@@ -188,7 +318,7 @@ export function CallInProgress({
 
 				<Button
 					title="Hangup"
-					onClick={() => onHangup && onHangup()}
+					onClick={() => session.hangup()}
 					className="bg-red-700 hover:bg-red-800"
 				>
 					Hangup <PhoneXmark />
@@ -207,8 +337,6 @@ export function CallInProgress({
 					</Button>
 				</form>
 			)}
-
-			<article className="font-mono text-sm">{callInfo}</article>
 		</Card>
 	);
 }
@@ -217,28 +345,40 @@ export function CallInProgress({
 // Incoming Call
 // ////////////////////////////////////////
 interface IncomingCallProps {
-	title?: string;
 	callInfo?: ReactNode;
+	session: Session;
 	onReject?: () => void;
 	onAccept?: () => void;
+	handler: () => void;
 }
 export function IncomingCall({
-	title,
 	callInfo,
+	session,
 	onReject,
 	onAccept,
+	handler,
 }: IncomingCallProps) {
+	const handleReject = () => {
+		session?.reject();
+		handler();
+	};
+
+	const handleAccept = () => {
+		session?.answer();
+		handler();
+	};
+
 	return (
 		<Card>
 			<div className="flex items-start justify-between">
 				<Title size="md" className="mb-4">
-					{title}
+					{session.status.number}
 				</Title>
 
 				<article className="flex justify-end gap-4">
 					<Button
 						title="Reject Call"
-						onClick={() => onReject && onReject()}
+						onClick={handleReject}
 						className="bg-red-700 hover:bg-red-800"
 					>
 						<PhoneXmark />
@@ -246,7 +386,7 @@ export function IncomingCall({
 
 					<Button
 						title="Accept Call"
-						onClick={() => onAccept && onAccept()}
+						onClick={handleAccept}
 						className="bg-emerald-700 hover:bg-emerald-800"
 					>
 						<Phone />
