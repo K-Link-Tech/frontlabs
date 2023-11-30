@@ -28,7 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const labelSlug = useMemo(() => slugify(label), [label]);
 
     return (
-      <div>
+      <div className="w-full">
         <label
           htmlFor={labelSlug}
           className="mb-2 block text-sm font-medium text-gray-900"
