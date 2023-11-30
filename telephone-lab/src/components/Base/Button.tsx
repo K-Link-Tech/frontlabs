@@ -7,27 +7,27 @@ import {
 } from "react";
 
 const buttonClassName = [
-  "me-2 inline-flex items-center rounded-lg bg-blue-700 p-2.5 text-center text-sm font-medium text-white",
-  "hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 active:translate-y-0.5",
+	"inline-flex items-center justify-center rounded-lg bg-blue-700 p-2.5 text-center text-sm font-medium text-white",
+	"hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 active:translate-y-0.5",
 ];
 
 type ButtonProps = DetailedHTMLProps<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  HTMLButtonElement
+	ButtonHTMLAttributes<HTMLButtonElement>,
+	HTMLButtonElement
 >;
 
 export function Button(props: ButtonProps) {
-  return (
-    <button
-      {...props}
-      type={props.type || "button"}
-      className={cn(buttonClassName, props.className)}
-    />
-  );
+	return (
+		<button
+			{...props}
+			type={props.type || "button"}
+			className={cn(buttonClassName, props.className)}
+		/>
+	);
 }
 
 export function LinkButton(
-  props: PropsWithChildren<LinkProps & { className?: string }>,
+	props: PropsWithChildren<LinkProps & { className?: string }>,
 ) {
-  return <Link {...props} className={cn(buttonClassName, props.className)} />;
+	return <Link {...props} className={cn(buttonClassName, props.className)} />;
 }
