@@ -328,6 +328,7 @@ export function CallInProgress({
 					{callInfo.isHold && " hold:" + timer.holdDuration}
 				</p> */}
 			</article>
+
 			<CallControl
 				number={number}
 				session={session}
@@ -479,6 +480,8 @@ export function IncomingCall({
 
 	return (
 		<Card>
+			<audio src="sound/ringtone.mp3" autoPlay />
+
 			<div className="flex items-start justify-between">
 				<Title size="md" className="mb-4">
 					{session.status.number}
