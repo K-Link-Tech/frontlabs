@@ -1,6 +1,7 @@
 import { echo } from "@/utils";
 import { initLinkus } from "@/utils/linkus-sdk";
 import { GetYeastarSignature } from "@/utils/yeastar-handshake";
+import { useCallSessionStore } from "@/utils/zustand";
 import { Copy, Play, Refresh, Square } from "iconoir-react";
 import { useCallback, useEffect, useState } from "react";
 import type { PBXOperator, PhoneOperator, Session } from "ys-webrtc-sdk-core";
@@ -108,24 +109,70 @@ export function SignatureForm() {
 }
 
 export function CallSetupUI() {
+	const { phone, setPhone, sessions, setSessions } = useCallSessionStore();
 	const [signature, setSignature] = useState("");
 	const [username, setUsername] = useState("");
 
-	const [phone, setPhone] = useState<PhoneOperator>();
+	const [sess, setSess] = useState<Map<string, Session>>();
 	const [pbx, setPBX] = useState<PBXOperator>();
 	const [destroy, setDestroy] = useState<() => void>();
 
 	const [callId, setCallId] = useState<string>("");
-	const [sessions, setSessions] = useState<Session[]>([]);
 	const [incomings, setIncoming] = useState<Session[]>([]);
 	const [cause, setCause] = useState<string>("");
+
+	const setupEventListener = useCallback(
+		(phone: PhoneOperator) => {
+			const startSession = ({
+				callId,
+				session,
+			}: {
+				callId: any;
+				session: any;
+			}) => {
+				setCallId(callId);
+				setSessions(Array.from(phone.sessions.values()));
+			};
+
+			const deleteSession = ({
+				callId,
+				cause,
+			}: {
+				callId: any;
+				cause: any;
+			}) => {
+				// here can handle session deleted event.
+				setCause(cause);
+
+				setSessions(Array.from(phone.sessions.values()));
+			};
+			const incoming = ({ callId, session }: { callId: any; session: any }) => {
+				// This example disabled call waiting, only handle one call.
+				// So here just handle one incoming call.
+				setIncoming([session]);
+			};
+			phone.on("startSession", startSession);
+			phone.on("deleteSession", deleteSession);
+			phone.on("incoming", incoming);
+		},
+		[setSessions],
+	);
+
+	useEffect(() => {
+		return () => {
+			if (!phone) return;
+			phone.removeListener("startSession", () => {});
+			phone.removeListener("deleteSession", () => {});
+			phone.removeListener("incoming", () => {});
+		};
+	}, [phone]);
 
 	const startLinkus = useCallback(() => {
 		initLinkus(
 			{ secret: signature, username },
 			{
 				beforeStart(phone) {
-					// phone.on();
+					setupEventListener(phone);
 				},
 				afterStart(phone, pbx, destroy) {
 					setPhone(phone);
@@ -134,41 +181,7 @@ export function CallSetupUI() {
 				},
 			},
 		);
-	}, [signature, username]);
-
-	useEffect(() => {
-		if (!phone) return;
-		// listen startSession event and show ui.
-		const startSession = ({
-			callId,
-			session,
-		}: {
-			callId: any;
-			session: any;
-		}) => {
-			setCallId(callId);
-			setSessions(Array.from(phone.sessions.values()));
-		};
-
-		const deleteSession = ({ callId, cause }: { callId: any; cause: any }) => {
-			// here can handle session deleted event.
-			setCause(cause);
-			setSessions(Array.from(phone.sessions.values()));
-		};
-		const incoming = ({ callId, session }: { callId: any; session: any }) => {
-			// This example disabled call waiting, only handle one call.
-			// So here just handle one incoming call.
-			setIncoming([session]);
-		};
-		phone.on("startSession", startSession);
-		phone.on("deleteSession", deleteSession);
-		phone.on("incoming", incoming);
-		return () => {
-			phone.removeListener("startSession", startSession);
-			phone.removeListener("deleteSession", deleteSession);
-			phone.removeListener("incoming", incoming);
-		};
-	}, [phone]);
+	}, [setPhone, setupEventListener, signature, username]);
 
 	return (
 		<section className="grid grid-cols-2 gap-4">
@@ -207,15 +220,7 @@ export function CallSetupUI() {
 			</div>
 
 			<div className="flex flex-col gap-4">
-				{sessions.map((session) => {
-					return (
-						<CallInProgress
-							key={`${session.status.callId}_${session.status.callStatus}`}
-							title={session.status.number}
-							session={session}
-						/>
-					);
-				})}
+				{sessions.length > 0 && <CallInProgress />}
 			</div>
 
 			<div className="col-span-2 flex flex-col gap-4">

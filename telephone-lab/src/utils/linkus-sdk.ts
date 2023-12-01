@@ -1,5 +1,5 @@
 import { yeastar } from "@/credentials";
-import { PBXOperator, PhoneOperator, init } from "ys-webrtc-sdk-core";
+import { PBXOperator, PhoneOperator } from "ys-webrtc-sdk-core";
 
 interface InitLinkusCredentials {
 	username: string;
@@ -23,7 +23,7 @@ interface InitLinkusOptions {
 // ////////////////////////////////////////
 // Linkus SDK Integration
 // ////////////////////////////////////////
-export function initLinkus(
+export async function initLinkus(
 	credentials: InitLinkusCredentials,
 	options: InitLinkusOptions = {},
 ) {
@@ -38,6 +38,8 @@ export function initLinkus(
 		});
 
 	const { beforeStart, afterStart, onError } = options;
+	const init = await import("ys-webrtc-sdk-core").then(({ init }) => init);
+
 	init({
 		pbxURL: yeastar.BaseURL,
 		username,
